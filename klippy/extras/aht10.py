@@ -106,8 +106,8 @@ class AHT10:
                     )
                     continue
 
-                self.is_calibrated = True if (data[0] & 0b00000100) else False
-                is_busy = True if (data[0] & 0b01000000) else False
+                self.is_calibrated = True if (data[0] & 0b00001000) else False
+                is_busy = True if (data[0] & 0b10000000) else False
 
             if is_busy:
                 return False
