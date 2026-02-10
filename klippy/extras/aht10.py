@@ -30,6 +30,7 @@ STATUS_CALIBRATED = 0x08
 
 MAX_BUSY_CYCLES = 5
 
+
 class AHTBase:
     model = None
 
@@ -71,11 +72,16 @@ class AHTBase:
 
         if self._make_measurement():
             if not self.is_calibrated:
-                logging.warning("%s %s: not calibrated, possible OTP fault"
-                                % (self.model, self.name))
-            logging.info("%s %s: successfully initialized, "
-                         "initial temp: %.3f, humidity: %.3f"
-                         % (self.model, self.name, self.temp, self.humidity))
+                logging.warning(
+                    "%s %s: not calibrated, possible OTP fault"
+                    % (self.model, self.name)
+                )
+            logging.info(
+                "%s %s: successfully initialized, "
+                "initial temp: %.3f, humidity: %.3f"
+                % (self.model, self.name, self.temp, self.humidity)
+            )
+
     def _soft_reset(self):
         logging.info("%s %s: performing soft reset" % (self.model, self.name))
         self.i2c.i2c_write(CMD_RESET)
@@ -95,9 +101,11 @@ class AHTBase:
                 # Check if we're constantly busy. If so, send soft-reset
                 # and issue warning.
                 if is_busy and cycles > MAX_BUSY_CYCLES:
-                    logging.warning("%s %s: device reported busy after "
-                                    "%d cycles, resetting device"
-                                    % (self.model, self.name, MAX_BUSY_CYCLES))
+                    logging.warning(
+                        "%s %s: device reported busy after "
+                        "%d cycles, resetting device"
+                        % (self.model, self.name, MAX_BUSY_CYCLES)
+                    )
                     self._soft_reset()
                     data = None
                     break
@@ -106,20 +114,23 @@ class AHTBase:
                 # Write command for updating temperature+status bit
                 self.i2c.i2c_write(CMD_MEASURE)
                 # Wait 110ms after first read, 75ms minimum
-                self.reactor.pause(self.reactor.monotonic() + .110)
+                self.reactor.pause(self.reactor.monotonic() + 0.110)
 
                 # Read 6 bytes of data
                 read = self.i2c.i2c_read([], 6)
                 if read is None:
-                    logging.warning("%s %s: received data from i2c_read is None"
-                                    % (self.model, self.name))
+                    logging.warning(
+                        "%s %s: received data from i2c_read is None"
+                        % (self.model, self.name)
+                    )
                     continue
 
-                data = bytearray(read['response'])
+                data = bytearray(read["response"])
                 if len(data) < 6:
-                    logging.warning("%s %s: received bytes less than expected:"
-                                    " got %d, need 6"
-                                    % (self.model, self.name, len(data)))
+                    logging.warning(
+                        "%s %s: received bytes less than expected:"
+                        " got %d, need 6" % (self.model, self.name, len(data))
+                    )
                     continue
 
                 self.is_calibrated = bool(data[0] & STATUS_CALIBRATED)
@@ -128,8 +139,10 @@ class AHTBase:
             if is_busy:
                 return False
         except Exception as e:
-            logging.exception("%s %s: exception encountered reading data: %s"
-                              % (self.model, self.name, str(e)))
+            logging.exception(
+                "%s %s: exception encountered reading data: %s"
+                % (self.model, self.name, str(e))
+            )
             return False
 
         # Parse temperature: 20 bits starting at data[3] (low nibble)
@@ -150,7 +163,7 @@ class AHTBase:
 
     def _sample_aht(self, eventtime):
         if not self._make_measurement():
-            self.temp = self.humidity = .0
+            self.temp = self.humidity = 0.0
             return self.reactor.NEVER
 
         if (
@@ -159,8 +172,8 @@ class AHTBase:
             and not get_danger_options().temp_ignore_limits
         ):
             self.printer.invoke_shutdown(
-                "%s temperature %.1f outside range of %.1f:%.1f" %
-                (self.model.upper(), self.temp, self.min_temp, self.max_temp)
+                "%s temperature %.1f outside range of %.1f:%.1f"
+                % (self.model.upper(), self.temp, self.min_temp, self.max_temp)
             )
 
         measured_time = self.reactor.monotonic()
@@ -184,12 +197,14 @@ class AHTBase:
             "humidity": self.humidity,
         }
 
+
 class AHT1x(AHTBase):
     model = "aht1x"
 
     def _send_init(self):
         self.i2c.i2c_write(CMD_INIT_AHT1X)
         self.reactor.pause(self.reactor.monotonic() + 0.040)
+
 
 class AHT2x(AHTBase):
     model = "aht2x"
@@ -198,12 +213,14 @@ class AHT2x(AHTBase):
         self.i2c.i2c_write(CMD_INIT_AHT2X)
         self.reactor.pause(self.reactor.monotonic() + 0.100)
 
+
 class AHT3x(AHTBase):
     model = "aht3x"
 
     def _send_init(self):
         # Wait for auto-calibration at power-on
         self.reactor.pause(self.reactor.monotonic() + 0.100)
+
 
 def load_config(config):
     # Register sensor
