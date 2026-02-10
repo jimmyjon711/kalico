@@ -38,7 +38,7 @@ class AHTBase:
         self.name = config.get_name().split()[-1]
         self.reactor = self.printer.get_reactor()
         self.i2c = bus.MCU_I2C_from_config(
-            config, default_addr=I2C_ADDR, default_speed=100000)
+            config, default_addr=I2C_ADDR, default_speed=100000
         )
         self.mcu = self.i2c.get_mcu()
         self.report_time = config.getint("aht10_report_time", 30, minval=5)
@@ -160,7 +160,7 @@ class AHTBase:
         ):
             self.printer.invoke_shutdown(
                 "%s temperature %.1f outside range of %.1f:%.1f" %
-                (self.model.upper(), self.temp, self.min_temp, self.max_temp))
+                (self.model.upper(), self.temp, self.min_temp, self.max_temp)
             )
 
         measured_time = self.reactor.monotonic()
